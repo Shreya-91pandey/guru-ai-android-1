@@ -209,6 +209,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             lifecycleScope.launch {
                 withContext(Dispatchers.IO) { memoryStore.clearAll() }
                 history.clear()
+                prefs.conversationSummary = ""
+                prefs.summarizedUpToCount = 0
                 tvChat.text = "Hey! I'm Guru. Add Gemini key in Settings."
                 dialog.dismiss()
                 Toast.makeText(this@MainActivity, "History cleared", Toast.LENGTH_SHORT).show()
@@ -463,6 +465,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tvStatus.text = "Accessibility: $a11y · $monitor · $key · $mode · ${Constants.DEVICE_MODEL}"
     }
 
+    // ---------- Chat + Summarization ----------
+
     private fun append(role: String, text: String) {
         history.add(role to text)
         val label = if (role == "user") "You" else "Guru"
@@ -472,7 +476,33 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             withContext(Dispatchers.IO) {
                 memoryStore.saveMessage(role, text)
             }
+            maybeSummarize()
         }
+    }
+
+    private suspend fun maybeSummarize() {
+        val newSinceLastSummary = history.size - prefs.summarizedUpToCount
+        if (newSinceLastSummary < 20) return
+        if (!prefs.aiOnlineMode) return
+
+        val toSummarize = history.drop(prefs.summarizedUpToCount).dropLast(4)
+        if (toSummarize.isEmpty()) return
+
+        val transcript = toSummarize.joinToString("\n") { (role, text) ->
+            val label = if (role == "user") "User" else "Guru"
+            "$label: $text"
+        }
+
+        val existingSummary = prefs.conversationSummary
+        val prompt = if (existingSummary.isBlank()) {
+            "Summarize this conversation in a few short sentences, keeping key facts, names, and preferences:\n\n$transcript"
+        } else {
+            "Here is an existing summary of earlier conversation:\n$existingSummary\n\nHere are new messages to fold in:\n$transcript\n\nGive one updated, concise summary combining both, keeping key facts, names, and preferences."
+        }
+
+        val newSummary = withContext(Dispatchers.IO) { callAi(prompt) }
+        prefs.conversationSummary = newSummary
+        prefs.summarizedUpToCount = history.size - 4
     }
 
     private fun send() {
@@ -505,12 +535,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun buildPromptWithHistory(userMessage: String): String {
-        if (history.size <= 1) return userMessage
         val recent = history.dropLast(1).takeLast(10).joinToString("\n") { (role, text) ->
             val label = if (role == "user") "User" else "Guru"
             "$label: $text"
         }
-        return "Recent conversation:\n$recent\n\nUser: $userMessage"
+        val summary = prefs.conversationSummary
+        return buildString {
+            if (summary.isNotBlank()) {
+                append("Summary of earlier conversation:\n$summary\n\n")
+            }
+            if (recent.isNotBlank()) {
+                append("Recent conversation:\n$recent\n\n")
+            }
+            append("User: $userMessage")
+        }
     }
 
     private fun speak(text: String) {
