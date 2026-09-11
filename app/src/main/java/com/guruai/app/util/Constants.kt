@@ -19,6 +19,8 @@ object Constants {
     const val KEY_AI_ONLINE = "ai_online_mode"
     const val KEY_THEME = "selected_theme"
     const val KEY_AI_PROVIDER = "ai_provider"
+    const val KEY_SUMMARY = "conversation_summary"
+    const val KEY_SUMMARY_COUNT = "summarized_up_to_count"
 
     const val PROVIDER_GEMINI = "gemini"
     const val PROVIDER_GROK = "grok"
