@@ -5,15 +5,20 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.guruai.app.data.Prefs
 import java.util.concurrent.atomic.AtomicReference
 
 class GuruAccessibilityService : AccessibilityService() {
 
+    private lateinit var prefs: Prefs
+
     override fun onServiceConnected() {
+        prefs = Prefs(this)
         instance.set(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
+        if (!::prefs.isInitialized || !prefs.screenMonitorEnabled) return
         event?.packageName?.toString()?.let { lastPackage = it }
     }
 
@@ -25,6 +30,9 @@ class GuruAccessibilityService : AccessibilityService() {
     }
 
     fun readVisibleText(maxChars: Int = 4000): String {
+        if (::prefs.isInitialized && !prefs.screenMonitorEnabled) {
+            return "(Screen Monitoring is off. Turn it on in Settings to let Guru read the screen.)"
+        }
         val root = rootInActiveWindow ?: return "(No active window – open the app/screen you want read.)"
         val sb = StringBuilder()
         collectText(root, sb, maxChars)
@@ -45,6 +53,7 @@ class GuruAccessibilityService : AccessibilityService() {
     }
 
     fun typeIntoFocusedField(text: String): Boolean {
+        if (::prefs.isInitialized && !prefs.screenMonitorEnabled) return false
         val root = rootInActiveWindow ?: return false
         val focused = root.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
             ?: findEditable(root)
