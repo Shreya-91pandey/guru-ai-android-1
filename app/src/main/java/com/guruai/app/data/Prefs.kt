@@ -45,4 +45,12 @@ class Prefs(context: Context) {
     var aiProvider: String
         get() = sp.getString(Constants.KEY_AI_PROVIDER, Constants.PROVIDER_GEMINI) ?: Constants.PROVIDER_GEMINI
         set(v) = sp.edit().putString(Constants.KEY_AI_PROVIDER, v).apply()
+
+    var conversationSummary: String
+        get() = sp.getString(Constants.KEY_SUMMARY, "") ?: ""
+        set(v) = sp.edit().putString(Constants.KEY_SUMMARY, v).apply()
+
+    var summarizedUpToCount: Int
+        get() = sp.getInt(Constants.KEY_SUMMARY_COUNT, 0)
+        set(v) = sp.edit().putInt(Constants.KEY_SUMMARY_COUNT, v).apply()
 }
