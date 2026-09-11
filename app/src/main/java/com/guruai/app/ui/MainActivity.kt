@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
@@ -118,6 +119,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
         findViewById<Button>(R.id.btnSend).setOnClickListener { send() }
         findViewById<Button>(R.id.btnPlus).setOnClickListener { showAttachMenu() }
+        findViewById<Button>(R.id.btnReadScreen).setOnClickListener { readScreen() }
         btnMic.setOnClickListener { toggleMic() }
 
         applyTheme()
@@ -158,6 +160,33 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     tvChat.append("\n\n$label:\n${msg.content}")
                 }
             }
+        }
+    }
+
+    private fun readScreen() {
+        if (!prefs.screenMonitorEnabled) {
+            Toast.makeText(this, "Turn on Screen Monitoring in Settings first", Toast.LENGTH_LONG).show()
+            return
+        }
+        val svc = GuruAccessibilityService.get()
+        if (svc == null) {
+            Toast.makeText(this, "Enable Accessibility for Guru AI in system settings", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+            return
+        }
+        val screenText = svc.readVisibleText()
+        append("user", "[Read screen request]")
+
+        if (!prefs.aiOnlineMode) {
+            append("assistant", "AI Online Mode is off. Turn it on in Settings to analyze the screen.")
+            return
+        }
+
+        lifecycleScope.launch {
+            val prompt = "The user asked to read the current screen. Here is the accessibility text snapshot:\n\n$screenText\n\nSummarize clearly and help with next steps."
+            val reply = withContext(Dispatchers.IO) { callAi(prompt) }
+            append("assistant", reply)
+            speak(reply)
         }
     }
 
@@ -351,6 +380,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnSettings.setBackgroundColor(accent)
         btnSettings.setTextColor(bg)
 
+        val btnReadScreen = findViewById<Button>(R.id.btnReadScreen)
+        btnReadScreen.setBackgroundColor(surface)
+        btnReadScreen.setTextColor(accent)
+
         val btnSend = findViewById<Button>(R.id.btnSend)
         btnSend.setBackgroundColor(accent)
         btnSend.setTextColor(bg)
@@ -365,9 +398,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun refreshStatus() {
         val a11y = if (GuruAccessibilityService.isEnabled()) "on" else "off"
+        val monitor = if (prefs.screenMonitorEnabled) "monitor on" else "monitor off"
         val key = if (prefs.geminiKey.isNotBlank()) "Gemini OK" else "add Gemini key"
         val mode = if (prefs.aiOnlineMode) "Online" else "Offline"
-        tvStatus.text = "Accessibility: $a11y · $key · $mode · ${Constants.DEVICE_MODEL}"
+        tvStatus.text = "Accessibility: $a11y · $monitor · $key · $mode · ${Constants.DEVICE_MODEL}"
     }
 
     private fun append(role: String, text: String) {
