@@ -120,6 +120,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         findViewById<Button>(R.id.btnSend).setOnClickListener { send() }
         findViewById<Button>(R.id.btnPlus).setOnClickListener { showAttachMenu() }
         findViewById<Button>(R.id.btnReadScreen).setOnClickListener { readScreen() }
+        findViewById<Button>(R.id.btnMenu).setOnClickListener { showHistoryMenu() }
         btnMic.setOnClickListener { toggleMic() }
 
         applyTheme()
@@ -161,6 +162,60 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
             }
         }
+    }
+
+    // ---------- Hamburger menu / History ----------
+
+    private fun showHistoryMenu() {
+        val dialog = BottomSheetDialog(this)
+        val view = LayoutInflater.from(this).inflate(R.layout.dialog_history, null)
+        dialog.setContentView(view)
+
+        val container = view.findViewById<LinearLayout>(R.id.historyListContainer)
+
+        lifecycleScope.launch {
+            val grouped = withContext(Dispatchers.IO) { memoryStore.getMessagesGroupedByDate() }
+            container.removeAllViews()
+            if (grouped.isEmpty()) {
+                val empty = TextView(this@MainActivity)
+                empty.text = "No history yet."
+                empty.setTextColor(Color.parseColor("#888888"))
+                empty.setPadding(8, 8, 8, 8)
+                container.addView(empty)
+            } else {
+                grouped.forEach { (date, messages) ->
+                    val dateHeader = TextView(this@MainActivity)
+                    dateHeader.text = date
+                    dateHeader.setTextColor(Color.parseColor("#F5C518"))
+                    dateHeader.textSize = 14f
+                    dateHeader.setPadding(4, 24, 4, 8)
+                    container.addView(dateHeader)
+
+                    val preview = messages.take(3).joinToString("\n") { msg ->
+                        val label = if (msg.role == "user") "You" else "Guru"
+                        "$label: ${msg.content.take(60)}"
+                    }
+                    val previewView = TextView(this@MainActivity)
+                    previewView.text = preview
+                    previewView.setTextColor(Color.parseColor("#CCCCCC"))
+                    previewView.textSize = 12f
+                    previewView.setPadding(4, 0, 4, 4)
+                    container.addView(previewView)
+                }
+            }
+        }
+
+        view.findViewById<Button>(R.id.btnClearHistory).setOnClickListener {
+            lifecycleScope.launch {
+                withContext(Dispatchers.IO) { memoryStore.clearAll() }
+                history.clear()
+                tvChat.text = "Hey! I'm Guru. Add Gemini key in Settings."
+                dialog.dismiss()
+                Toast.makeText(this@MainActivity, "History cleared", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialog.show()
     }
 
     private fun readScreen() {
@@ -375,6 +430,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tvChat.setTextColor(textPrimary)
         etInput.setTextColor(textPrimary)
         etInput.setBackgroundColor(surface)
+
+        val btnMenu = findViewById<Button>(R.id.btnMenu)
+        btnMenu.setBackgroundColor(surface)
+        btnMenu.setTextColor(accent)
 
         val btnSettings = findViewById<Button>(R.id.btnSettings)
         btnSettings.setBackgroundColor(accent)
