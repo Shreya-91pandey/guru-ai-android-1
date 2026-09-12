@@ -47,6 +47,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
+import com.guruai.app.data.OpenRouterClient
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var prefs: Prefs
@@ -156,14 +157,24 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private suspend fun callAi(prompt: String): String {
-        return if (prefs.aiProvider == Constants.PROVIDER_GROK) {
-            if (prefs.grokKey.isBlank()) {
-                "xAI (Grok) API key missing. Add it in Settings."
-            } else {
-                GrokClient(prefs.grokKey).chat(prompt, emptyList())
+        return when (prefs.aiProvider) {
+            Constants.PROVIDER_GROK -> {
+                if (prefs.grokKey.isBlank()) {
+                    "xAI (Grok) API key missing. Add it in Settings."
+                } else {
+                    GrokClient(prefs.grokKey).chat(prompt, emptyList())
+                }
             }
-        } else {
-            GeminiClient(prefs.geminiKey).chat(prompt, emptyList())
+            Constants.PROVIDER_OPENROUTER -> {
+                if (prefs.openRouterKey.isBlank()) {
+                    "OpenRouter API key missing. Add it in Settings."
+                } else {
+                    OpenRouterClient(prefs.openRouterKey).chat(prompt, emptyList())
+                }
+            }
+            else -> {
+                GeminiClient(prefs.geminiKey).chat(prompt, emptyList())
+            }
         }
     }
 
