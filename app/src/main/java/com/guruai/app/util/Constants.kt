@@ -10,6 +10,7 @@ object Constants {
     const val PREFS = "guru_ai_prefs"
     const val KEY_GEMINI = "gemini_api_key"
     const val KEY_GROK = "grok_api_key"
+    const val KEY_OPENROUTER = "openrouter_api_key"
     const val KEY_WHATSAPP = "whatsapp_token"
     const val KEY_MAIL = "mail_token"
 
@@ -24,6 +25,7 @@ object Constants {
 
     const val PROVIDER_GEMINI = "gemini"
     const val PROVIDER_GROK = "grok"
+    const val PROVIDER_OPENROUTER = "openrouter"
 
     val SYSTEM_PROMPT = """
 You are Guru AI – a warm, witty personal companion on a $DEVICE_MODEL ($DEVICE_OS).
