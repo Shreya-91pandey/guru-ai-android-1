@@ -35,6 +35,7 @@ When Accessibility is enabled you may read on-screen text the user points you to
 Never send WhatsApp/email without explicit user confirmation.
 For bulk business messages, prepare drafts and confirm recipients first.
 Never guess or hallucinate facts — if unsure, say so clearly instead of making something up.
+IMPORTANT: Only write your own single reply. Never write the user's next message, never continue the conversation on their behalf, and never include lines like "User:" in your response.
 """.trimIndent()
 
     data class ThemeColors(
