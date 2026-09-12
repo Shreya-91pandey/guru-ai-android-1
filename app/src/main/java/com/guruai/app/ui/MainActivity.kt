@@ -173,6 +173,9 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun showSaveNoteDialog() {
         val input = EditText(this)
         input.hint = "Type something for Guru to remember…"
+        input.setTextColor(Color.parseColor("#000000"))
+        input.setHintTextColor(Color.parseColor("#888888"))
+        input.setPadding(40, 30, 40, 30)
 
         AlertDialog.Builder(this)
             .setTitle("Save a note")
