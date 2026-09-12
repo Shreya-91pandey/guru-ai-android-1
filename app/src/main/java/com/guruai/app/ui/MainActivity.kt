@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
+import com.guruai.app.service.WhatsAppNotificationListener
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var prefs: Prefs
@@ -551,6 +552,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
 
+        val whatsappKeywords = listOf("whatsapp", "व्हाट्सएप", "वाट्सएप")
+        val isWhatsappRequest = whatsappKeywords.any { text.contains(it, ignoreCase = true) }
+
+        if (isWhatsappRequest) {
+            handleWhatsAppRequest(text)
+            return
+        }
+
         val needsTool = text.contains("time", ignoreCase = true) ||
             text.contains("समय", ignoreCase = true) ||
             text.contains("search", ignoreCase = true) ||
@@ -568,6 +577,35 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             append("assistant", reply)
             speak(reply)
         }
+    }
+
+    private fun handleWhatsAppRequest(userText: String) {
+        if (!prefs.whatsappSyncEnabled) {
+            append("assistant", "Turn on \"Read WhatsApp Messages\" in Settings first.")
+            return
+        }
+        if (!WhatsAppNotificationListener.isListenerConnected(this)) {
+            append("assistant", "Guru needs notification access to read WhatsApp. Opening settings — find Guru AI and turn it on.")
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+            return
+        }
+
+        val nameMatch = Regex("(?:from|ka|ki)\\s+([A-Za-z\\u0900-\\u097F]+)", RegexOption.IGNORE_CASE)
+            .find(userText)?.groupValues?.get(1)
+
+        val messages = if (!nameMatch.isNullOrBlank()) {
+            WhatsAppNotificationListener.getRecentFrom(nameMatch)
+        } else {
+            WhatsAppNotificationListener.getRecent()
+        }
+
+        if (messages.isEmpty()) {
+            append("assistant", "No recent WhatsApp messages found" + if (!nameMatch.isNullOrBlank()) " from $nameMatch." else ".")
+            return
+        }
+
+        val summary = messages.takeLast(10).joinToString("\n") { "${it.sender}: ${it.text}" }
+        append("assistant", "Recent WhatsApp messages:\n\n$summary\n\nWant me to draft a reply to any of these? Just tell me what to say — I'll prepare it, but you'll tap Send yourself.")
     }
 
     private fun buildPromptWithHistory(userMessage: String, relevantNotes: List<String> = emptyList()): String {
