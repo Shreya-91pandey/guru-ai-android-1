@@ -37,13 +37,16 @@ class SettingsActivity : AppCompatActivity() {
         val tvPassError = findViewById<TextView>(R.id.tvPassError)
         val etGemini = findViewById<EditText>(R.id.etGemini)
         val etGrok = findViewById<EditText>(R.id.etGrok)
+        val etOpenRouter = findViewById<EditText>(R.id.etOpenRouter)
         val etWhatsapp = findViewById<EditText>(R.id.etWhatsapp)
         val etMail = findViewById<EditText>(R.id.etMail)
         val cbShowGemini = findViewById<CheckBox>(R.id.cbShowGemini)
         val cbShowGrok = findViewById<CheckBox>(R.id.cbShowGrok)
+        val cbShowOpenRouter = findViewById<CheckBox>(R.id.cbShowOpenRouter)
         val rgProvider = findViewById<RadioGroup>(R.id.rgProvider)
         val rbGemini = findViewById<RadioButton>(R.id.rbGemini)
         val rbGrok = findViewById<RadioButton>(R.id.rbGrok)
+        val rbOpenRouter = findViewById<RadioButton>(R.id.rbOpenRouter)
         tvThemeName = findViewById(R.id.tvThemeName)
 
         val swScreenMonitor = findViewById<Switch>(R.id.swScreenMonitor)
@@ -68,6 +71,7 @@ class SettingsActivity : AppCompatActivity() {
                 contentPanel.visibility = View.VISIBLE
                 etGemini.setText(prefs.geminiKey)
                 etGrok.setText(prefs.grokKey)
+                etOpenRouter.setText(prefs.openRouterKey)
                 etWhatsapp.setText(prefs.whatsappToken)
                 etMail.setText(prefs.mailToken)
                 swScreenMonitor.isChecked = prefs.screenMonitorEnabled
@@ -76,10 +80,10 @@ class SettingsActivity : AppCompatActivity() {
                 swAiOnline.isChecked = prefs.aiOnlineMode
                 selectedTheme = prefs.themeIndex
                 selectTheme(selectedTheme)
-                if (prefs.aiProvider == Constants.PROVIDER_GROK) {
-                    rbGrok.isChecked = true
-                } else {
-                    rbGemini.isChecked = true
+                when (prefs.aiProvider) {
+                    Constants.PROVIDER_GROK -> rbGrok.isChecked = true
+                    Constants.PROVIDER_OPENROUTER -> rbOpenRouter.isChecked = true
+                    else -> rbGemini.isChecked = true
                 }
                 tvPassError.visibility = View.GONE
             } else {
@@ -103,9 +107,18 @@ class SettingsActivity : AppCompatActivity() {
             etGrok.setSelection(etGrok.text.length)
         }
 
+        cbShowOpenRouter.setOnCheckedChangeListener { _, checked ->
+            etOpenRouter.inputType = if (checked)
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            else
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            etOpenRouter.setSelection(etOpenRouter.text.length)
+        }
+
         findViewById<Button>(R.id.btnSave).setOnClickListener {
             prefs.geminiKey = etGemini.text.toString().trim()
             prefs.grokKey = etGrok.text.toString().trim()
+            prefs.openRouterKey = etOpenRouter.text.toString().trim()
             prefs.whatsappToken = etWhatsapp.text.toString().trim()
             prefs.mailToken = etMail.text.toString().trim()
             prefs.screenMonitorEnabled = swScreenMonitor.isChecked
@@ -113,8 +126,11 @@ class SettingsActivity : AppCompatActivity() {
             prefs.emailSyncEnabled = swEmailSync.isChecked
             prefs.aiOnlineMode = swAiOnline.isChecked
             prefs.themeIndex = selectedTheme
-            prefs.aiProvider = if (rgProvider.checkedRadioButtonId == R.id.rbGrok)
-                Constants.PROVIDER_GROK else Constants.PROVIDER_GEMINI
+            prefs.aiProvider = when (rgProvider.checkedRadioButtonId) {
+                R.id.rbGrok -> Constants.PROVIDER_GROK
+                R.id.rbOpenRouter -> Constants.PROVIDER_OPENROUTER
+                else -> Constants.PROVIDER_GEMINI
+            }
             Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
             finish()
         }
