@@ -1,6 +1,7 @@
 package com.guruai.app.ui
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -31,6 +32,7 @@ import com.guruai.app.agent.WebSearchTool
 import com.guruai.app.data.GeminiClient
 import com.guruai.app.data.GrokClient
 import com.guruai.app.data.Prefs
+import com.guruai.app.memory.KnowledgeStore
 import com.guruai.app.memory.MemoryStore
 import com.guruai.app.service.GuruAccessibilityService
 import com.guruai.app.util.Constants
@@ -43,6 +45,7 @@ import java.util.Locale
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var prefs: Prefs
     private lateinit var memoryStore: MemoryStore
+    private lateinit var knowledgeStore: KnowledgeStore
     private lateinit var tvChat: TextView
     private lateinit var tvStatus: TextView
     private lateinit var etInput: EditText
@@ -97,6 +100,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         setContentView(R.layout.activity_main)
         prefs = Prefs(this)
         memoryStore = MemoryStore(this)
+        knowledgeStore = KnowledgeStore(this)
 
         toolRegistry = ToolRegistry().apply {
             register(GetTimeTool())
@@ -162,6 +166,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 }
             }
         }
+    }
+
+    // ---------- Knowledge / Notes ----------
+
+    private fun showSaveNoteDialog() {
+        val input = EditText(this)
+        input.hint = "Type something for Guru to remember…"
+
+        AlertDialog.Builder(this)
+            .setTitle("Save a note")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val text = input.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.IO) {
+                            knowledgeStore.save(title = text.take(40), content = text)
+                        }
+                        Toast.makeText(this@MainActivity, "Saved to Guru's memory", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     // ---------- Hamburger menu / History ----------
@@ -344,6 +372,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             dialog.dismiss()
             pickFileLauncher.launch("*/*")
         }
+        view.findViewById<LinearLayout>(R.id.optionSaveNote).setOnClickListener {
+            dialog.dismiss()
+            showSaveNoteDialog()
+        }
         dialog.show()
     }
 
@@ -465,7 +497,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tvStatus.text = "Accessibility: $a11y · $monitor · $key · $mode · ${Constants.DEVICE_MODEL}"
     }
 
-    // ---------- Chat + Summarization ----------
+    // ---------- Chat + Summarization + Knowledge ----------
 
     private fun append(role: String, text: String) {
         history.add(role to text)
@@ -526,7 +558,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 if (needsTool) {
                     agentLoop.run(text)
                 } else {
-                    callAi(buildPromptWithHistory(text))
+                    val relevantNotes = knowledgeStore.findRelevant(text)
+                    callAi(buildPromptWithHistory(text, relevantNotes.map { it.content }))
                 }
             }
             append("assistant", reply)
@@ -534,13 +567,18 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    private fun buildPromptWithHistory(userMessage: String): String {
+    private fun buildPromptWithHistory(userMessage: String, relevantNotes: List<String> = emptyList()): String {
         val recent = history.dropLast(1).takeLast(10).joinToString("\n") { (role, text) ->
             val label = if (role == "user") "User" else "Guru"
             "$label: $text"
         }
         val summary = prefs.conversationSummary
         return buildString {
+            if (relevantNotes.isNotEmpty()) {
+                append("Relevant saved notes:\n")
+                relevantNotes.forEach { append("- $it\n") }
+                append("\n")
+            }
             if (summary.isNotBlank()) {
                 append("Summary of earlier conversation:\n$summary\n\n")
             }
