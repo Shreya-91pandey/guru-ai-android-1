@@ -157,25 +157,49 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private suspend fun callAi(prompt: String): String {
-        return when (prefs.aiProvider) {
-            Constants.PROVIDER_GROK -> {
-                if (prefs.grokKey.isBlank()) {
-                    "xAI (Grok) API key missing. Add it in Settings."
-                } else {
-                    GrokClient(prefs.grokKey).chat(prompt, emptyList())
-                }
-            }
-            Constants.PROVIDER_OPENROUTER -> {
-                if (prefs.openRouterKey.isBlank()) {
-                    "OpenRouter API key missing. Add it in Settings."
-                } else {
-                    OpenRouterClient(prefs.openRouterKey).chat(prompt, emptyList())
-                }
-            }
-            else -> {
-                GeminiClient(prefs.geminiKey).chat(prompt, emptyList())
-            }
+        val providers = mutableListOf<Pair<String, suspend () -> String>>()
+
+        if (prefs.geminiKey.isNotBlank()) {
+            providers.add("Gemini" to { GeminiClient(prefs.geminiKey).chat(prompt, emptyList()) })
         }
+        if (prefs.grokKey.isNotBlank()) {
+            providers.add("Grok" to { GrokClient(prefs.grokKey).chat(prompt, emptyList()) })
+        }
+        if (prefs.openRouterKey.isNotBlank()) {
+            providers.add("OpenRouter" to { OpenRouterClient(prefs.openRouterKey).chat(prompt, emptyList()) })
+        }
+
+        if (providers.isEmpty()) {
+            return "No AI provider key found. Add at least one API key in Settings."
+        }
+
+        // Try the selected provider first, then fall back to others in order.
+        val preferredName = when (prefs.aiProvider) {
+            Constants.PROVIDER_GROK -> "Grok"
+            Constants.PROVIDER_OPENROUTER -> "OpenRouter"
+            else -> "Gemini"
+        }
+        val ordered = providers.sortedByDescending { it.first == preferredName }
+
+        var lastError = "Could not reach any AI provider."
+        for ((name, call) in ordered) {
+            val result = try {
+                call()
+            } catch (e: Exception) {
+                "error: ${e.message}"
+            }
+            val looksLikeFailure = result.startsWith("Gemini error") ||
+                result.startsWith("Grok error") ||
+                result.startsWith("OpenRouter error") ||
+                result.startsWith("error:") ||
+                result.contains("API key missing")
+
+            if (!looksLikeFailure) {
+                return result
+            }
+            lastError = result
+        }
+        return lastError
     }
 
     private fun addWelcomeMessage() {
