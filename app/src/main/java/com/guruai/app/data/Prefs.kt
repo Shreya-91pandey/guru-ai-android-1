@@ -14,6 +14,10 @@ class Prefs(context: Context) {
         get() = sp.getString(Constants.KEY_GROK, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_GROK, v).apply()
 
+    var openRouterKey: String
+        get() = sp.getString(Constants.KEY_OPENROUTER, "") ?: ""
+        set(v) = sp.edit().putString(Constants.KEY_OPENROUTER, v).apply()
+
     var whatsappToken: String
         get() = sp.getString(Constants.KEY_WHATSAPP, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_WHATSAPP, v).apply()
