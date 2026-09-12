@@ -2,6 +2,9 @@ package com.guruai.app.ui
 
 import android.Manifest
 import android.app.AlertDialog
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
@@ -13,9 +16,11 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.view.LayoutInflater
+import android.view.Gravity
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -35,24 +40,28 @@ import com.guruai.app.data.Prefs
 import com.guruai.app.memory.KnowledgeStore
 import com.guruai.app.memory.MemoryStore
 import com.guruai.app.service.GuruAccessibilityService
+import com.guruai.app.service.WhatsAppNotificationListener
 import com.guruai.app.util.Constants
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.Locale
-import com.guruai.app.service.WhatsAppNotificationListener
 
 class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var prefs: Prefs
     private lateinit var memoryStore: MemoryStore
     private lateinit var knowledgeStore: KnowledgeStore
-    private lateinit var tvChat: TextView
+    private lateinit var chatContainer: LinearLayout
+    private lateinit var chatScroll: ScrollView
     private lateinit var tvStatus: TextView
     private lateinit var etInput: EditText
     private lateinit var btnMic: Button
     private val history = mutableListOf<Pair<String, String>>()
     private var cameraImageUri: Uri? = null
+    private var accentColor: Int = Color.parseColor("#F5C518")
+    private var surfaceColor: Int = Color.parseColor("#121212")
+    private var textPrimaryColor: Int = Color.parseColor("#F5F5F5")
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -112,7 +121,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             toolRegistry = toolRegistry
         )
 
-        tvChat = findViewById(R.id.tvChat)
+        chatContainer = findViewById(R.id.chatContainer)
+        chatScroll = findViewById(R.id.chatScroll)
         tvStatus = findViewById(R.id.tvStatus)
         etInput = findViewById(R.id.etInput)
         btnMic = findViewById(R.id.btnMic)
@@ -129,6 +139,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnMic.setOnClickListener { toggleMic() }
 
         applyTheme()
+        addWelcomeMessage()
         loadHistory()
     }
 
@@ -156,17 +167,73 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    private fun addWelcomeMessage() {
+        addMessageView("assistant", "Hey! I'm Guru. Add Gemini key in Settings.")
+    }
+
     private fun loadHistory() {
         lifecycleScope.launch {
             val saved = withContext(Dispatchers.IO) { memoryStore.getAllMessages() }
             if (saved.isNotEmpty()) {
                 saved.forEach { msg ->
                     history.add(msg.role to msg.content)
-                    val label = if (msg.role == "user") "You" else "Guru"
-                    tvChat.append("\n\n$label:\n${msg.content}")
+                    addMessageView(msg.role, msg.content)
                 }
             }
         }
+    }
+
+    // ---------- Message rendering (bubble + copy) ----------
+
+    private fun addMessageView(role: String, text: String) {
+        val label = if (role == "user") "You" else "Guru"
+
+        val bubble = LinearLayout(this)
+        bubble.orientation = LinearLayout.VERTICAL
+        bubble.setBackgroundColor(surfaceColor)
+        bubble.setPadding(24, 16, 24, 16)
+        val bubbleParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        bubbleParams.bottomMargin = 16
+        bubble.layoutParams = bubbleParams
+
+        val labelView = TextView(this)
+        labelView.text = label
+        labelView.setTextColor(accentColor)
+        labelView.textSize = 12f
+        labelView.setPadding(0, 0, 0, 4)
+        bubble.addView(labelView)
+
+        val textView = TextView(this)
+        textView.text = text
+        textView.setTextColor(textPrimaryColor)
+        textView.textSize = 15f
+        bubble.addView(textView)
+
+        if (role == "assistant") {
+            val copyRow = LinearLayout(this)
+            copyRow.orientation = LinearLayout.HORIZONTAL
+            copyRow.gravity = Gravity.END
+
+            val copyButton = TextView(this)
+            copyButton.text = "Copy"
+            copyButton.setTextColor(accentColor)
+            copyButton.textSize = 12f
+            copyButton.setPadding(0, 12, 0, 0)
+            copyButton.setOnClickListener {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Guru reply", text)
+                clipboard.setPrimaryClip(clip)
+                Toast.makeText(this@MainActivity, "Copied", Toast.LENGTH_SHORT).show()
+            }
+            copyRow.addView(copyButton)
+            bubble.addView(copyRow)
+        }
+
+        chatContainer.addView(bubble)
+        chatScroll.post { chatScroll.fullScroll(ScrollView.FOCUS_DOWN) }
     }
 
     // ---------- Knowledge / Notes ----------
@@ -243,7 +310,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 history.clear()
                 prefs.conversationSummary = ""
                 prefs.summarizedUpToCount = 0
-                tvChat.text = "Hey! I'm Guru. Add Gemini key in Settings."
+                chatContainer.removeAllViews()
+                addWelcomeMessage()
                 dialog.dismiss()
                 Toast.makeText(this@MainActivity, "History cleared", Toast.LENGTH_SHORT).show()
             }
@@ -460,12 +528,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val textPrimary = Color.parseColor(theme.textPrimary)
         val textSecondary = Color.parseColor(theme.textSecondary)
 
+        accentColor = accent
+        surfaceColor = surface
+        textPrimaryColor = textPrimary
+
         findViewById<LinearLayout>(R.id.rootLayout).setBackgroundColor(bg)
         findViewById<LinearLayout>(R.id.topBar).setBackgroundColor(surface)
         findViewById<LinearLayout>(R.id.bottomBar).setBackgroundColor(surface)
         findViewById<TextView>(R.id.tvTitle).setTextColor(accent)
         tvStatus.setTextColor(textSecondary)
-        tvChat.setTextColor(textPrimary)
         etInput.setTextColor(textPrimary)
         etInput.setBackgroundColor(surface)
 
@@ -505,8 +576,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun append(role: String, text: String) {
         history.add(role to text)
-        val label = if (role == "user") "You" else "Guru"
-        tvChat.append("\n\n$label:\n$text")
+        addMessageView(role, text)
 
         lifecycleScope.launch {
             withContext(Dispatchers.IO) {
