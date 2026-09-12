@@ -59,18 +59,17 @@
         android:text="Accessibility: off" />
 
     <ScrollView
+        android:id="@+id/chatScroll"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <TextView
-            android:id="@+id/tvChat"
+        <LinearLayout
+            android:id="@+id/chatContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:textColor="#F5F5F5"
-            android:textSize="15sp"
-            android:text="Hey! I'm Guru. Add Gemini key in Settings." />
+            android:orientation="vertical"
+            android:padding="12dp" />
     </ScrollView>
 
     <LinearLayout
