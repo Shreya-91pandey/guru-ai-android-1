@@ -68,7 +68,7 @@ class OpenRouterClient(private val apiKey: String) {
         )
 
         val body = JSONObject()
-            .put("model", "meta-llama/llama-3.3-70b-instruct:free")
+            .put("model", "openrouter/free")
             .put("messages", messages)
             .put("temperature", 0.85)
             .toString()
