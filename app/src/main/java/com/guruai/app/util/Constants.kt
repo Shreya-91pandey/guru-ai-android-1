@@ -4,7 +4,6 @@ object Constants {
     const val APP_NAME = "Guru AI"
     const val DEVICE_MODEL = "Nothing Phone (3a) Lite"
     const val DEVICE_OS = "Nothing OS"
-
     const val MASTER_PASSWORD = "Nikesh@12345"
 
     const val PREFS = "guru_ai_prefs"
@@ -13,6 +12,8 @@ object Constants {
     const val KEY_OPENROUTER = "openrouter_api_key"
     const val KEY_WHATSAPP = "whatsapp_token"
     const val KEY_MAIL = "mail_token"
+    const val KEY_SEARCH_API_KEY = "search_api_key"
+    const val KEY_SEARCH_CX = "search_engine_cx"
 
     const val KEY_SCREEN_MONITOR = "screen_monitor_enabled"
     const val KEY_WHATSAPP_SYNC = "whatsapp_sync_enabled"
@@ -25,7 +26,6 @@ object Constants {
 
     const val PROVIDER_GEMINI = "gemini"
     const val PROVIDER_GROK = "grok"
-    const val PROVIDER_OPENROUTER = "openrouter"
 
     val SYSTEM_PROMPT = """
 You are Guru AI – a warm, witty personal companion on a $DEVICE_MODEL ($DEVICE_OS).
