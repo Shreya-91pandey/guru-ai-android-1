@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         toolRegistry = ToolRegistry().apply {
             register(GetTimeTool())
-            register(WebSearchTool())
+            register(WebSearchTool(prefs.searchApiKey, prefs.searchCx))
         }
         agentLoop = AgentLoop(
             llmClient = { prompt -> callAi(prompt) },
@@ -682,7 +682,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val needsTool = text.contains("time", ignoreCase = true) ||
             text.contains("समय", ignoreCase = true) ||
             text.contains("search", ignoreCase = true) ||
-            text.contains("खोज", ignoreCase = true)
+            text.contains("खोज", ignoreCase = true) ||
+            text.contains("check kar", ignoreCase = true) ||
+            text.contains("check karo", ignoreCase = true) ||
+            text.contains("net per", ignoreCase = true) ||
+            text.contains("net pe", ignoreCase = true) ||
+            text.contains("google", ignoreCase = true) ||
+            text.contains("pata karo", ignoreCase = true)
 
         lifecycleScope.launch {
             val reply = withContext(Dispatchers.IO) {
