@@ -266,29 +266,24 @@
                 android:id="@+id/rgProvider"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
+                android:orientation="horizontal"
                 android:paddingBottom="16dp">
 
                 <RadioButton
                     android:id="@+id/rbGemini"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="Gemini"
                     android:textColor="#F5F5F5"
                     android:checked="true" />
 
                 <RadioButton
                     android:id="@+id/rbGrok"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
                     android:text="xAI (Grok)"
-                    android:textColor="#F5F5F5" />
-
-                <RadioButton
-                    android:id="@+id/rbOpenRouter"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="OpenRouter"
                     android:textColor="#F5F5F5" />
             </RadioGroup>
 
@@ -342,34 +337,6 @@
 
             <CheckBox
                 android:id="@+id/cbShowGrok"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Show key"
-                android:textColor="#A0A0A0" />
-
-            <!-- OpenRouter -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="OpenRouter API Key"
-                android:textColor="#F5C518"
-                android:textStyle="bold"
-                android:paddingTop="16dp"
-                android:paddingBottom="6dp" />
-
-            <EditText
-                android:id="@+id/etOpenRouter"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:hint="sk-or-…"
-                android:textColor="#F5F5F5"
-                android:textColorHint="#666666"
-                android:background="#1A1A1A"
-                android:padding="12dp" />
-
-            <CheckBox
-                android:id="@+id/cbShowOpenRouter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Show key"
