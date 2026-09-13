@@ -37,10 +37,13 @@ class SettingsActivity : AppCompatActivity() {
         val tvPassError = findViewById<TextView>(R.id.tvPassError)
         val etGemini = findViewById<EditText>(R.id.etGemini)
         val etGrok = findViewById<EditText>(R.id.etGrok)
+        val etSearchApiKey = findViewById<EditText>(R.id.etSearchApiKey)
+        val etSearchCx = findViewById<EditText>(R.id.etSearchCx)
         val etWhatsapp = findViewById<EditText>(R.id.etWhatsapp)
         val etMail = findViewById<EditText>(R.id.etMail)
         val cbShowGemini = findViewById<CheckBox>(R.id.cbShowGemini)
         val cbShowGrok = findViewById<CheckBox>(R.id.cbShowGrok)
+        val cbShowSearchApiKey = findViewById<CheckBox>(R.id.cbShowSearchApiKey)
         val rgProvider = findViewById<RadioGroup>(R.id.rgProvider)
         val rbGemini = findViewById<RadioButton>(R.id.rbGemini)
         val rbGrok = findViewById<RadioButton>(R.id.rbGrok)
@@ -68,6 +71,8 @@ class SettingsActivity : AppCompatActivity() {
                 contentPanel.visibility = View.VISIBLE
                 etGemini.setText(prefs.geminiKey)
                 etGrok.setText(prefs.grokKey)
+                etSearchApiKey.setText(prefs.searchApiKey)
+                etSearchCx.setText(prefs.searchCx)
                 etWhatsapp.setText(prefs.whatsappToken)
                 etMail.setText(prefs.mailToken)
                 swScreenMonitor.isChecked = prefs.screenMonitorEnabled
@@ -103,9 +108,19 @@ class SettingsActivity : AppCompatActivity() {
             etGrok.setSelection(etGrok.text.length)
         }
 
+        cbShowSearchApiKey.setOnCheckedChangeListener { _, checked ->
+            etSearchApiKey.inputType = if (checked)
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD
+            else
+                InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
+            etSearchApiKey.setSelection(etSearchApiKey.text.length)
+        }
+
         findViewById<Button>(R.id.btnSave).setOnClickListener {
             prefs.geminiKey = etGemini.text.toString().trim()
             prefs.grokKey = etGrok.text.toString().trim()
+            prefs.searchApiKey = etSearchApiKey.text.toString().trim()
+            prefs.searchCx = etSearchCx.text.toString().trim()
             prefs.whatsappToken = etWhatsapp.text.toString().trim()
             prefs.mailToken = etMail.text.toString().trim()
             prefs.screenMonitorEnabled = swScreenMonitor.isChecked
