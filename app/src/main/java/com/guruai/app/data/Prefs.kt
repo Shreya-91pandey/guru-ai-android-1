@@ -14,10 +14,6 @@ class Prefs(context: Context) {
         get() = sp.getString(Constants.KEY_GROK, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_GROK, v).apply()
 
-    var openRouterKey: String
-        get() = sp.getString(Constants.KEY_OPENROUTER, "") ?: ""
-        set(v) = sp.edit().putString(Constants.KEY_OPENROUTER, v).apply()
-
     var whatsappToken: String
         get() = sp.getString(Constants.KEY_WHATSAPP, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_WHATSAPP, v).apply()
@@ -25,6 +21,14 @@ class Prefs(context: Context) {
     var mailToken: String
         get() = sp.getString(Constants.KEY_MAIL, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_MAIL, v).apply()
+
+    var searchApiKey: String
+        get() = sp.getString(Constants.KEY_SEARCH_API_KEY, "") ?: ""
+        set(v) = sp.edit().putString(Constants.KEY_SEARCH_API_KEY, v).apply()
+
+    var searchCx: String
+        get() = sp.getString(Constants.KEY_SEARCH_CX, "") ?: ""
+        set(v) = sp.edit().putString(Constants.KEY_SEARCH_CX, v).apply()
 
     var screenMonitorEnabled: Boolean
         get() = sp.getBoolean(Constants.KEY_SCREEN_MONITOR, false)
