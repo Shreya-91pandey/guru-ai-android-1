@@ -15,6 +15,7 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.view.LayoutInflater
 import android.view.Gravity
 import android.widget.Button
@@ -65,6 +66,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
+    private var isSpeaking = false
     private var tts: TextToSpeech? = null
 
     private lateinit var toolRegistry: ToolRegistry
@@ -146,6 +148,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             tts?.language = Locale.getDefault()
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    isSpeaking = true
+                }
+                override fun onDone(utteranceId: String?) {
+                    isSpeaking = false
+                    if (isListening) restartListening()
+                }
+                override fun onError(utteranceId: String?) {
+                    isSpeaking = false
+                    if (isListening) restartListening()
+                }
+            })
         }
     }
 
@@ -155,16 +170,46 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         applyTheme()
     }
 
+    // ---------- AI provider call with fallback (Gemini + Grok only) ----------
+
     private suspend fun callAi(prompt: String): String {
-        return if (prefs.aiProvider == Constants.PROVIDER_GROK) {
-            if (prefs.grokKey.isBlank()) {
-                "xAI (Grok) API key missing. Add it in Settings."
-            } else {
-                GrokClient(prefs.grokKey).chat(prompt, emptyList())
-            }
-        } else {
-            GeminiClient(prefs.geminiKey).chat(prompt, emptyList())
+        val providers = mutableListOf<Pair<String, suspend () -> String>>()
+
+        if (prefs.geminiKey.isNotBlank()) {
+            providers.add("Gemini" to { GeminiClient(prefs.geminiKey).chat(prompt, emptyList()) })
         }
+        if (prefs.grokKey.isNotBlank()) {
+            providers.add("Grok" to { GrokClient(prefs.grokKey).chat(prompt, emptyList()) })
+        }
+
+        if (providers.isEmpty()) {
+            return "No AI provider key found. Add at least one API key in Settings."
+        }
+
+        val preferredName = when (prefs.aiProvider) {
+            Constants.PROVIDER_GROK -> "Grok"
+            else -> "Gemini"
+        }
+        val ordered = providers.sortedByDescending { it.first == preferredName }
+
+        var lastError = "Could not reach any AI provider."
+        for ((name, call) in ordered) {
+            val result = try {
+                call()
+            } catch (e: Exception) {
+                "error: ${e.message}"
+            }
+            val looksLikeFailure = result.startsWith("Gemini error") ||
+                result.startsWith("Grok error") ||
+                result.startsWith("error:") ||
+                result.contains("API key missing")
+
+            if (!looksLikeFailure) {
+                return result
+            }
+            lastError = result
+        }
+        return lastError
     }
 
     private fun addWelcomeMessage() {
@@ -347,6 +392,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
+    // ---------- Mic (continuous toggle, pauses while Guru speaks) ----------
+
     private fun toggleMic() {
         if (isListening) {
             stopListening()
@@ -377,21 +424,21 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             override fun onBufferReceived(buffer: ByteArray?) {}
 
             override fun onEndOfSpeech() {
-                if (isListening) restartListening()
+                if (isListening && !isSpeaking) restartListening()
             }
 
             override fun onError(error: Int) {
-                if (isListening) restartListening()
+                if (isListening && !isSpeaking) restartListening()
             }
 
             override fun onResults(results: Bundle?) {
                 val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val spoken = matches?.firstOrNull()
-                if (!spoken.isNullOrBlank()) {
+                if (!spoken.isNullOrBlank() && !isSpeaking) {
                     etInput.setText(spoken)
                     send()
                 }
-                if (isListening) restartListening()
+                if (isListening && !isSpeaking) restartListening()
             }
 
             override fun onPartialResults(partialResults: Bundle?) {}
@@ -400,11 +447,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         isListening = true
         btnMic.text = "⏹"
-        launchRecognizerIntent()
+        if (!isSpeaking) launchRecognizerIntent()
     }
 
     private fun restartListening() {
-        if (isListening) launchRecognizerIntent()
+        if (isListening && !isSpeaking) launchRecognizerIntent()
     }
 
     private fun launchRecognizerIntent() {
@@ -426,6 +473,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         speechRecognizer?.destroy()
         speechRecognizer = null
     }
+
+    // ---------- Attach menu ----------
 
     private fun showAttachMenu() {
         val dialog = BottomSheetDialog(this)
@@ -701,6 +750,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     private fun speak(text: String) {
+        speechRecognizer?.stopListening()
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "guru_reply")
     }
 
