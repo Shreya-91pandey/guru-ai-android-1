@@ -342,6 +342,46 @@
                 android:text="Show key"
                 android:textColor="#A0A0A0" />
 
+            <!-- Web Search -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Web Search (Google Custom Search)"
+                android:textColor="#F5C518"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="6dp" />
+
+            <EditText
+                android:id="@+id/etSearchApiKey"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:hint="Search API Key (AIza…)"
+                android:textColor="#F5F5F5"
+                android:textColorHint="#666666"
+                android:background="#1A1A1A"
+                android:padding="12dp" />
+
+            <CheckBox
+                android:id="@+id/cbShowSearchApiKey"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show key"
+                android:textColor="#A0A0A0" />
+
+            <EditText
+                android:id="@+id/etSearchCx"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:hint="Search Engine ID (cx)"
+                android:textColor="#F5F5F5"
+                android:textColorHint="#666666"
+                android:background="#1A1A1A"
+                android:padding="12dp"
+                android:layout_marginTop="8dp" />
+
             <!-- Box 2 -->
             <TextView
                 android:layout_width="match_parent"
