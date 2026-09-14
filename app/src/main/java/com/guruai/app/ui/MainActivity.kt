@@ -38,7 +38,10 @@ import com.guruai.app.agent.AgentLoop
 import com.guruai.app.agent.GetTimeTool
 import com.guruai.app.agent.ToolRegistry
 import com.guruai.app.agent.WebSearchTool
+import com.guruai.app.auth.GmailAuth
 import com.guruai.app.data.GeminiClient
+import com.guruai.app.data.GmailClient
+import com.guruai.app.data.GmailMessage
 import com.guruai.app.data.GrokClient
 import com.guruai.app.data.Prefs
 import com.guruai.app.memory.KnowledgeStore
@@ -70,6 +73,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var backgroundColor: Int = Color.parseColor("#0A0A0A")
 
     private var typingView: View? = null
+    private var lastGmailMessages: List<GmailMessage> = emptyList()
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -752,6 +756,20 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
 
+        val gmailKeywords = listOf("gmail", "email", "mail", "जीमेल", "ईमेल")
+        val isGmailRequest = gmailKeywords.any { text.contains(it, ignoreCase = true) }
+
+        if (isGmailRequest) {
+            val isReplyRequest = text.contains("reply", ignoreCase = true) ||
+                text.contains("जवाब", ignoreCase = true)
+            if (isReplyRequest) {
+                handleGmailReplyRequest(text)
+            } else {
+                handleGmailListRequest()
+            }
+            return
+        }
+
         val needsTool = text.contains("time", ignoreCase = true) ||
             text.contains("समय", ignoreCase = true) ||
             text.contains("search", ignoreCase = true) ||
@@ -807,6 +825,69 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val summary = messages.takeLast(10).joinToString("\n") { "${it.sender}: ${it.text}" }
         append("assistant", "Recent WhatsApp messages:\n\n$summary\n\nWant me to draft a reply to any of these? Just tell me what to say — I'll prepare it, but you'll tap Send yourself.")
+    }
+
+    // ---------- Gmail ----------
+
+    private fun handleGmailListRequest() {
+        if (!prefs.emailSyncEnabled) {
+            append("assistant", "Turn on \"Read Gmail / Emails\" in Settings first.")
+            return
+        }
+
+        lifecycleScope.launch {
+            showTyping()
+            val token = withContext(Dispatchers.IO) { GmailAuth.getAccessToken(this@MainActivity) }
+            if (token == null) {
+                hideTyping()
+                append("assistant", "Gmail connect nahi hai. Settings mein \"Connect Gmail\" dabao aur sign in karo.")
+                return@launch
+            }
+            val messages = withContext(Dispatchers.IO) { GmailClient.listRecent(token, 5) }
+            lastGmailMessages = messages
+            hideTyping()
+            if (messages.isEmpty()) {
+                append("assistant", "Koi naya email nahi mila inbox mein.")
+            } else {
+                val summary = messages.joinToString("\n\n") { "From: ${it.from}\nSubject: ${it.subject}\n${it.snippet}" }
+                append("assistant", "Recent emails:\n\n$summary\n\nKisi ek ka reply banwana ho to bolo: \"reply likho: <kya kehna hai>\" — main draft bana dunga, bhejna khud karna.")
+            }
+        }
+    }
+
+    private fun handleGmailReplyRequest(userText: String) {
+        if (lastGmailMessages.isEmpty()) {
+            append("assistant", "Pehle \"email check karo\" bolo, phir batana kisko reply karna hai.")
+            return
+        }
+
+        val target = lastGmailMessages.first()
+
+        lifecycleScope.launch {
+            showTyping()
+            val token = withContext(Dispatchers.IO) { GmailAuth.getAccessToken(this@MainActivity) }
+            if (token == null) {
+                hideTyping()
+                append("assistant", "Gmail connect nahi hai. Settings mein \"Connect Gmail\" dabao aur sign in karo.")
+                return@launch
+            }
+
+            val draftPrompt = "Original email:\nFrom: ${target.from}\nSubject: ${target.subject}\n${target.snippet}\n\nUser wants this reply drafted: $userText\n\nWrite a short, polite email reply body only (no subject line, no signature placeholder)."
+            val body = withContext(Dispatchers.IO) { callAi(draftPrompt) }
+
+            val success = withContext(Dispatchers.IO) {
+                GmailClient.createDraft(token, target.from, "Re: ${target.subject}", body)
+            }
+            hideTyping()
+
+            val reply = if (success) {
+                "Draft ban gaya ${target.from} ke liye — Gmail app kholke Drafts mein check karo aur khud Send karo:\n\n$body"
+            } else {
+                "Draft banane mein dikkat aayi. Dobara try karo."
+            }
+            append("assistant", reply)
+            speak(reply)
+        }
     }
 
     private fun buildPromptWithHistory(userMessage: String, relevantNotes: List<String> = emptyList()): String {
