@@ -19,7 +19,21 @@ class GuruAccessibilityService : AccessibilityService() {
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (!::prefs.isInitialized || !prefs.screenMonitorEnabled) return
-        event?.packageName?.toString()?.let { lastPackage = it }
+        val pkg = event?.packageName?.toString() ?: return
+        lastPackage = pkg
+
+        if (pkg != packageName) {
+            val root = rootInActiveWindow
+            if (root != null && root.packageName?.toString() == pkg) {
+                val sb = StringBuilder()
+                collectText(root, sb, 4000)
+                root.recycle()
+                val text = sb.toString()
+                if (text.isNotBlank()) {
+                    cachedScreenText = text
+                }
+            }
+        }
     }
 
     override fun onInterrupt() {}
@@ -33,11 +47,25 @@ class GuruAccessibilityService : AccessibilityService() {
         if (::prefs.isInitialized && !prefs.screenMonitorEnabled) {
             return "(Screen Monitoring is off. Turn it on in Settings to let Guru read the screen.)"
         }
-        val root = rootInActiveWindow ?: return "(No active window – open the app/screen you want read.)"
-        val sb = StringBuilder()
-        collectText(root, sb, maxChars)
-        root.recycle()
-        return sb.toString().ifBlank { "(No text nodes found on screen.)" }
+
+        val root = rootInActiveWindow
+        val currentPkg = root?.packageName?.toString()
+
+        if (root != null && currentPkg != null && currentPkg != packageName) {
+            val sb = StringBuilder()
+            collectText(root, sb, maxChars)
+            root.recycle()
+            val text = sb.toString()
+            if (text.isNotBlank()) return text
+        } else {
+            root?.recycle()
+        }
+
+        if (cachedScreenText.isNotBlank()) {
+            return cachedScreenText
+        }
+
+        return "(No screen text captured yet. Open the app/screen you want read, wait a second, then come back and tap Read Screen.)"
     }
 
     private fun collectText(node: AccessibilityNodeInfo?, sb: StringBuilder, max: Int) {
@@ -90,6 +118,7 @@ class GuruAccessibilityService : AccessibilityService() {
     companion object {
         private val instance = AtomicReference<GuruAccessibilityService?>(null)
         @Volatile var lastPackage: String = ""
+        @Volatile private var cachedScreenText: String = ""
 
         fun get(): GuruAccessibilityService? = instance.get()
 
