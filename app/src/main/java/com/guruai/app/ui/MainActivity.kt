@@ -16,8 +16,11 @@ import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import android.view.LayoutInflater
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -58,11 +61,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private lateinit var tvStatus: TextView
     private lateinit var etInput: EditText
     private lateinit var btnMic: Button
+    private lateinit var btnSend: Button
     private val history = mutableListOf<Pair<String, String>>()
     private var cameraImageUri: Uri? = null
     private var accentColor: Int = Color.parseColor("#F5C518")
     private var surfaceColor: Int = Color.parseColor("#121212")
     private var textPrimaryColor: Int = Color.parseColor("#F5F5F5")
+    private var backgroundColor: Int = Color.parseColor("#0A0A0A")
+
+    private var typingView: View? = null
 
     private var speechRecognizer: SpeechRecognizer? = null
     private var isListening = false
@@ -128,17 +135,30 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         tvStatus = findViewById(R.id.tvStatus)
         etInput = findViewById(R.id.etInput)
         btnMic = findViewById(R.id.btnMic)
+        btnSend = findViewById(R.id.btnSend)
 
         tts = TextToSpeech(this, this)
 
         findViewById<Button>(R.id.btnSettings).setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
         }
-        findViewById<Button>(R.id.btnSend).setOnClickListener { send() }
+        btnSend.setOnClickListener { send() }
         findViewById<Button>(R.id.btnPlus).setOnClickListener { showAttachMenu() }
         findViewById<Button>(R.id.btnReadScreen).setOnClickListener { readScreen() }
         findViewById<Button>(R.id.btnMenu).setOnClickListener { showHistoryMenu() }
         btnMic.setOnClickListener { toggleMic() }
+
+        etInput.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val hasText = !s.isNullOrBlank()
+                btnSend.isEnabled = hasText
+                btnSend.alpha = if (hasText) 1f else 0.4f
+            }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        btnSend.isEnabled = false
+        btnSend.alpha = 0.4f
 
         applyTheme()
         addWelcomeMessage()
@@ -212,6 +232,26 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         return lastError
     }
 
+    // ---------- Friendly error wrapping ----------
+
+    private fun friendlyReply(raw: String): String {
+        val lower = raw.lowercase()
+        val looksLikeError = lower.contains("exception") ||
+            lower.contains("failed to connect") ||
+            lower.contains("unable to resolve host") ||
+            lower.contains("timeout") ||
+            lower.contains("no ai provider key") ||
+            raw.startsWith("error:") ||
+            raw.startsWith("Gemini error") ||
+            raw.startsWith("Grok error") ||
+            raw.startsWith("Could not reach")
+        return if (looksLikeError) {
+            "Lagta hai internet connection weak hai ya AI thoda busy hai abhi. Thodi der baad dobara try karo. 🙏"
+        } else {
+            raw
+        }
+    }
+
     private fun addWelcomeMessage() {
         addMessageView("assistant", "Hey! I'm Guru. Add Gemini key in Settings.")
     }
@@ -228,33 +268,46 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
     }
 
-    // ---------- Message rendering (bubble + copy) ----------
+    // ---------- Message rendering (bubble + copy + alignment) ----------
 
-    private fun addMessageView(role: String, text: String) {
+    private fun addMessageView(role: String, text: String): View {
         val label = if (role == "user") "You" else "Guru"
+        val isUser = role == "user"
 
-        val bubble = LinearLayout(this)
-        bubble.orientation = LinearLayout.VERTICAL
-        bubble.setBackgroundColor(surfaceColor)
-        bubble.setPadding(24, 16, 24, 16)
-        val bubbleParams = LinearLayout.LayoutParams(
+        val outer = LinearLayout(this)
+        outer.orientation = LinearLayout.HORIZONTAL
+        outer.gravity = if (isUser) Gravity.END else Gravity.START
+        val outerParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
         )
-        bubbleParams.bottomMargin = 16
-        bubble.layoutParams = bubbleParams
+        outerParams.bottomMargin = 16
+        outer.layoutParams = outerParams
+
+        val bubble = LinearLayout(this)
+        bubble.orientation = LinearLayout.VERTICAL
+        val bubbleBg = if (isUser) accentColor else surfaceColor
+        bubble.setBackgroundColor(bubbleBg)
+        bubble.setPadding(24, 16, 24, 16)
+        bubble.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        val textColorForBubble = if (isUser) backgroundColor else textPrimaryColor
 
         val labelView = TextView(this)
         labelView.text = label
-        labelView.setTextColor(accentColor)
+        labelView.setTextColor(if (isUser) backgroundColor else accentColor)
         labelView.textSize = 12f
         labelView.setPadding(0, 0, 0, 4)
         bubble.addView(labelView)
 
         val textView = TextView(this)
         textView.text = text
-        textView.setTextColor(textPrimaryColor)
+        textView.setTextColor(textColorForBubble)
         textView.textSize = 15f
+        textView.maxWidth = (resources.displayMetrics.widthPixels * 0.78).toInt()
         bubble.addView(textView)
 
         if (role == "assistant") {
@@ -277,8 +330,19 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             bubble.addView(copyRow)
         }
 
-        chatContainer.addView(bubble)
+        outer.addView(bubble)
+        chatContainer.addView(outer)
         chatScroll.post { chatScroll.fullScroll(ScrollView.FOCUS_DOWN) }
+        return outer
+    }
+
+    private fun showTyping() {
+        typingView = addMessageView("assistant", "Guru type kar raha hai…")
+    }
+
+    private fun hideTyping() {
+        typingView?.let { chatContainer.removeView(it) }
+        typingView = null
     }
 
     // ---------- Knowledge / Notes ----------
@@ -385,8 +449,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         lifecycleScope.launch {
+            showTyping()
             val prompt = "The user asked to read the current screen. Here is the accessibility text snapshot:\n\n$screenText\n\nSummarize clearly and help with next steps."
-            val reply = withContext(Dispatchers.IO) { callAi(prompt) }
+            val rawReply = withContext(Dispatchers.IO) { callAi(prompt) }
+            hideTyping()
+            val reply = friendlyReply(rawReply)
             append("assistant", reply)
             speak(reply)
         }
@@ -526,13 +593,16 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         lifecycleScope.launch {
-            val reply = withContext(Dispatchers.IO) {
+            showTyping()
+            val rawReply = withContext(Dispatchers.IO) {
                 GeminiClient(prefs.geminiKey).analyzeImage(
                     contentResolver,
                     uri,
                     "Describe what you see in this image and give useful, relevant information or help based on it."
                 )
             }
+            hideTyping()
+            val reply = friendlyReply(rawReply)
             append("assistant", reply)
             speak(reply)
         }
@@ -560,10 +630,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 return@launch
             }
 
+            showTyping()
             val trimmedContent = content.take(6000)
             val prompt = "Here is the content of a file the user shared:\n\n$trimmedContent\n\nSummarize it and highlight anything important or useful."
 
-            val reply = withContext(Dispatchers.IO) { callAi(prompt) }
+            val rawReply = withContext(Dispatchers.IO) { callAi(prompt) }
+            hideTyping()
+            val reply = friendlyReply(rawReply)
             append("assistant", reply)
             speak(reply)
         }
@@ -580,6 +653,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         accentColor = accent
         surfaceColor = surface
         textPrimaryColor = textPrimary
+        backgroundColor = bg
 
         findViewById<LinearLayout>(R.id.rootLayout).setBackgroundColor(bg)
         findViewById<LinearLayout>(R.id.topBar).setBackgroundColor(surface)
@@ -601,7 +675,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         btnReadScreen.setBackgroundColor(surface)
         btnReadScreen.setTextColor(accent)
 
-        val btnSend = findViewById<Button>(R.id.btnSend)
         btnSend.setBackgroundColor(accent)
         btnSend.setTextColor(bg)
 
@@ -691,7 +764,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             text.contains("pata karo", ignoreCase = true)
 
         lifecycleScope.launch {
-            val reply = withContext(Dispatchers.IO) {
+            showTyping()
+            val rawReply = withContext(Dispatchers.IO) {
                 if (needsTool) {
                     agentLoop.run(text)
                 } else {
@@ -699,6 +773,8 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     callAi(buildPromptWithHistory(text, relevantNotes.map { it.content }))
                 }
             }
+            hideTyping()
+            val reply = friendlyReply(rawReply)
             append("assistant", reply)
             speak(reply)
         }
