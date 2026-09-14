@@ -12,6 +12,8 @@ object Constants {
     const val KEY_OPENROUTER = "openrouter_api_key"
     const val KEY_WHATSAPP = "whatsapp_token"
     const val KEY_MAIL = "mail_token"
+    const val KEY_GMAIL_EMAIL = "gmail_connected_email"
+    const val KEY_EMAIL_SYNC = "email_sync_enabled"
     const val KEY_SEARCH_API_KEY = "search_api_key"
     const val KEY_SEARCH_CX = "search_engine_cx"
 
