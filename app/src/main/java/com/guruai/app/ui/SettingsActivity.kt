@@ -1,5 +1,6 @@
 package com.guruai.app.ui
 
+import android.app.Activity
 import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
@@ -14,8 +15,11 @@ import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.guruai.app.R
+import com.guruai.app.auth.GmailAuth
 import com.guruai.app.data.Prefs
 import com.guruai.app.util.Constants
 
@@ -24,6 +28,24 @@ class SettingsActivity : AppCompatActivity() {
     private var selectedTheme = 0
     private lateinit var swatches: List<TextView>
     private lateinit var tvThemeName: TextView
+    private lateinit var tvGmailStatus: TextView
+
+    private val gmailSignInLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+            try {
+                val account = task.getResult(com.google.android.gms.common.api.ApiException::class.java)
+                val email = account?.email ?: ""
+                prefs.gmailConnectedEmail = email
+                tvGmailStatus.text = "Connected: $email"
+                Toast.makeText(this, "Gmail connected!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Gmail sign-in failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +70,7 @@ class SettingsActivity : AppCompatActivity() {
         val rbGemini = findViewById<RadioButton>(R.id.rbGemini)
         val rbGrok = findViewById<RadioButton>(R.id.rbGrok)
         tvThemeName = findViewById(R.id.tvThemeName)
+        tvGmailStatus = findViewById(R.id.tvGmailStatus)
 
         val swScreenMonitor = findViewById<Switch>(R.id.swScreenMonitor)
         val swWhatsappSync = findViewById<Switch>(R.id.swWhatsappSync)
@@ -63,6 +86,10 @@ class SettingsActivity : AppCompatActivity() {
         )
         swatches.forEachIndexed { index, view ->
             view.setOnClickListener { selectTheme(index) }
+        }
+
+        findViewById<Button>(R.id.btnConnectGmail).setOnClickListener {
+            gmailSignInLauncher.launch(GmailAuth.signInClient(this).signInIntent)
         }
 
         findViewById<Button>(R.id.btnUnlock).setOnClickListener {
@@ -86,6 +113,10 @@ class SettingsActivity : AppCompatActivity() {
                 } else {
                     rbGemini.isChecked = true
                 }
+
+                val connectedEmail = GmailAuth.connectedEmail(this) ?: prefs.gmailConnectedEmail
+                tvGmailStatus.text = if (connectedEmail.isNotBlank()) "Connected: $connectedEmail" else "Not connected"
+
                 tvPassError.visibility = View.GONE
             } else {
                 tvPassError.visibility = View.VISIBLE
