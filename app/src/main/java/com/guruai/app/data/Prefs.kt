@@ -30,6 +30,10 @@ class Prefs(context: Context) {
         get() = sp.getString(Constants.KEY_SEARCH_CX, "") ?: ""
         set(v) = sp.edit().putString(Constants.KEY_SEARCH_CX, v).apply()
 
+    var gmailConnectedEmail: String
+        get() = sp.getString(Constants.KEY_GMAIL_EMAIL, "") ?: ""
+        set(v) = sp.edit().putString(Constants.KEY_GMAIL_EMAIL, v).apply()
+
     var screenMonitorEnabled: Boolean
         get() = sp.getBoolean(Constants.KEY_SCREEN_MONITOR, false)
         set(v) = sp.edit().putBoolean(Constants.KEY_SCREEN_MONITOR, v).apply()
