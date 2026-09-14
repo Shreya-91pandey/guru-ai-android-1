@@ -351,7 +351,32 @@
                 android:textStyle="bold"
                 android:paddingTop="16dp"
                 android:paddingBottom="6dp" />
+            <!-- Gmail -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Gmail"
+                android:textColor="#F5C518"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="6dp" />
 
+            <TextView
+                android:id="@+id/tvGmailStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not connected"
+                android:textColor="#A0A0A0"
+                android:background="#1A1A1A"
+                android:padding="12dp" />
+
+            <Button
+                android:id="@+id/btnConnectGmail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Connect Gmail"
+                android:layout_marginTop="8dp" />
+            
             <EditText
                 android:id="@+id/etSearchApiKey"
                 android:layout_width="match_parent"
