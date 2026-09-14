@@ -19,7 +19,6 @@ object Constants {
 
     const val KEY_SCREEN_MONITOR = "screen_monitor_enabled"
     const val KEY_WHATSAPP_SYNC = "whatsapp_sync_enabled"
-    const val KEY_EMAIL_SYNC = "email_sync_enabled"
     const val KEY_AI_ONLINE = "ai_online_mode"
     const val KEY_THEME = "selected_theme"
     const val KEY_AI_PROVIDER = "ai_provider"
