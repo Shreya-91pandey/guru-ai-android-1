@@ -16,7 +16,8 @@ object Constants {
     const val KEY_EMAIL_SYNC = "email_sync_enabled"
     const val KEY_SEARCH_API_KEY = "search_api_key"
     const val KEY_SEARCH_CX = "search_engine_cx"
-
+    const val KEY_OFFLINE_MODEL_PATH = "offline_model_path"
+    
     const val KEY_SCREEN_MONITOR = "screen_monitor_enabled"
     const val KEY_WHATSAPP_SYNC = "whatsapp_sync_enabled"
     const val KEY_AI_ONLINE = "ai_online_mode"
