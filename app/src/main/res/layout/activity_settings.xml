@@ -377,6 +377,32 @@
                 android:text="Connect Gmail"
                 android:layout_marginTop="8dp" />
             
+           <!-- Offline AI Model -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Offline AI Model"
+                android:textColor="#F5C518"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvOfflineModelStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="No offline model loaded"
+                android:textColor="#A0A0A0"
+                android:background="#1A1A1A"
+                android:padding="12dp" />
+
+            <Button
+                android:id="@+id/btnSelectOfflineModel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select model file (.task)"
+                android:layout_marginTop="8dp" />
+            
             <EditText
                 android:id="@+id/etSearchApiKey"
                 android:layout_width="match_parent"
