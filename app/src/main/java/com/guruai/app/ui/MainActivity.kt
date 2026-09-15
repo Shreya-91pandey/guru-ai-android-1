@@ -642,6 +642,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 return@launch
             }
 
+            val fileName = getFileName(uri)
+            val savedContent = content.take(20000)
+
+            withContext(Dispatchers.IO) {
+                knowledgeStore.save(title = fileName, content = savedContent)
+            }
+
             showTyping()
             val trimmedContent = content.take(6000)
             val prompt = "Here is the content of a file the user shared:\n\n$trimmedContent\n\nSummarize it and highlight anything important or useful."
@@ -649,9 +656,24 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val rawReply = withContext(Dispatchers.IO) { callAi(prompt) }
             hideTyping()
             val reply = friendlyReply(rawReply)
-            append("assistant", reply)
+            append("assistant", "Saved \"$fileName\" to Guru's memory. Here's a summary:\n\n$reply")
             speak(reply)
         }
+    }
+
+    private fun getFileName(uri: Uri): String {
+        var name = uri.lastPathSegment ?: "file"
+        try {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (nameIndex >= 0 && cursor.moveToFirst()) {
+                    name = cursor.getString(nameIndex)
+                }
+            }
+        } catch (e: Exception) {
+            // fallback to lastPathSegment
+        }
+        return name
     }
 
     private fun applyTheme() {
