@@ -2,6 +2,7 @@ package com.guruai.app.ui
 
 import android.app.Activity
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -17,11 +18,16 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.guruai.app.R
 import com.guruai.app.auth.GmailAuth
 import com.guruai.app.data.Prefs
 import com.guruai.app.util.Constants
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var prefs: Prefs
@@ -29,6 +35,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var swatches: List<TextView>
     private lateinit var tvThemeName: TextView
     private lateinit var tvGmailStatus: TextView
+    private lateinit var tvOfflineModelStatus: TextView
 
     private val gmailSignInLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -44,6 +51,40 @@ class SettingsActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 Toast.makeText(this, "Gmail sign-in failed: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        }
+    }
+
+    private val pickOfflineModelLauncher = registerForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            tvOfflineModelStatus.text = "Copying model file… this can take a minute"
+            lifecycleScope.launch {
+                val path = withContext(Dispatchers.IO) { copyModelToInternalStorage(uri) }
+                if (path != null) {
+                    prefs.offlineModelPath = path
+                    val sizeMb = File(path).length() / 1024 / 1024
+                    tvOfflineModelStatus.text = "Ready: ${File(path).name} ($sizeMb MB)"
+                    Toast.makeText(this@SettingsActivity, "Offline model saved", Toast.LENGTH_SHORT).show()
+                } else {
+                    tvOfflineModelStatus.text = "No offline model loaded"
+                    Toast.makeText(this@SettingsActivity, "Could not copy model file", Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    private fun copyModelToInternalStorage(uri: Uri): String? {
+        return try {
+            val destFile = File(filesDir, "offline_model.task")
+            contentResolver.openInputStream(uri)?.use { input ->
+                destFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            destFile.absolutePath
+        } catch (e: Exception) {
+            null
         }
     }
 
@@ -71,6 +112,7 @@ class SettingsActivity : AppCompatActivity() {
         val rbGrok = findViewById<RadioButton>(R.id.rbGrok)
         tvThemeName = findViewById(R.id.tvThemeName)
         tvGmailStatus = findViewById(R.id.tvGmailStatus)
+        tvOfflineModelStatus = findViewById(R.id.tvOfflineModelStatus)
 
         val swScreenMonitor = findViewById<Switch>(R.id.swScreenMonitor)
         val swWhatsappSync = findViewById<Switch>(R.id.swWhatsappSync)
@@ -90,6 +132,10 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<Button>(R.id.btnConnectGmail).setOnClickListener {
             gmailSignInLauncher.launch(GmailAuth.signInClient(this).signInIntent)
+        }
+
+        findViewById<Button>(R.id.btnSelectOfflineModel).setOnClickListener {
+            pickOfflineModelLauncher.launch("*/*")
         }
 
         findViewById<Button>(R.id.btnUnlock).setOnClickListener {
@@ -116,6 +162,14 @@ class SettingsActivity : AppCompatActivity() {
 
                 val connectedEmail = GmailAuth.connectedEmail(this) ?: prefs.gmailConnectedEmail
                 tvGmailStatus.text = if (connectedEmail.isNotBlank()) "Connected: $connectedEmail" else "Not connected"
+
+                val modelPath = prefs.offlineModelPath
+                tvOfflineModelStatus.text = if (modelPath.isNotBlank() && File(modelPath).exists()) {
+                    val sizeMb = File(modelPath).length() / 1024 / 1024
+                    "Ready: ${File(modelPath).name} ($sizeMb MB)"
+                } else {
+                    "No offline model loaded"
+                }
 
                 tvPassError.visibility = View.GONE
             } else {
