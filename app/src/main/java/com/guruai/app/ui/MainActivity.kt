@@ -43,6 +43,7 @@ import com.guruai.app.data.GeminiClient
 import com.guruai.app.data.GmailClient
 import com.guruai.app.data.GmailMessage
 import com.guruai.app.data.GrokClient
+import com.guruai.app.data.OfflineLlmClient
 import com.guruai.app.data.Prefs
 import com.guruai.app.memory.KnowledgeStore
 import com.guruai.app.memory.MemoryStore
@@ -206,10 +207,6 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             providers.add("Grok" to { GrokClient(prefs.grokKey).chat(prompt, emptyList()) })
         }
 
-        if (providers.isEmpty()) {
-            return "No AI provider key found. Add at least one API key in Settings."
-        }
-
         val preferredName = when (prefs.aiProvider) {
             Constants.PROVIDER_GROK -> "Grok"
             else -> "Gemini"
@@ -233,6 +230,17 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
             lastError = result
         }
+
+        val offlinePath = prefs.offlineModelPath
+        if (offlinePath.isNotBlank() && File(offlinePath).exists()) {
+            val offlineResult = withContext(Dispatchers.Default) {
+                OfflineLlmClient.generate(applicationContext, offlinePath, prompt)
+            }
+            if (!offlineResult.startsWith("(Offline model error")) {
+                return "$offlineResult\n\n[offline mode — no internet]"
+            }
+        }
+
         return lastError
     }
 
