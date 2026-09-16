@@ -61,5 +61,5 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
-}
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+}
