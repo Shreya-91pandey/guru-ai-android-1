@@ -122,7 +122,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        com.tom_roush.pdfbox.util.PDFBoxResourceLoader.init(applicationContext)
+        PDFBoxResourceLoader.init(applicationContext)
         setContentView(R.layout.activity_main)
         prefs = Prefs(this)
         memoryStore = MemoryStore(this)
