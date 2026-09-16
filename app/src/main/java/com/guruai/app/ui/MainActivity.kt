@@ -44,6 +44,7 @@ import com.guruai.app.data.GmailClient
 import com.guruai.app.data.GmailMessage
 import com.guruai.app.data.GrokClient
 import com.guruai.app.data.OfflineLlmClient
+import com.tom_roush.pdfbox.util.PDFBoxResourceLoader
 import com.guruai.app.data.Prefs
 import com.guruai.app.memory.KnowledgeStore
 import com.guruai.app.memory.MemoryStore
