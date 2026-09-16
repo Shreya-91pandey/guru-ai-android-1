@@ -630,21 +630,33 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         }
 
         lifecycleScope.launch {
+            val fileName = getFileName(uri)
+            val isPdf = fileName.endsWith(".pdf", ignoreCase = true) ||
+                contentResolver.getType(uri) == "application/pdf"
+
             val content = withContext(Dispatchers.IO) {
                 try {
-                    contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
+                    if (isPdf) {
+                        com.guruai.app.util.PdfTextExtractor.extractText(this@MainActivity, uri)
+                    } else {
+                        contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
+                    }
                 } catch (e: Exception) {
                     null
                 }
             }
 
             if (content.isNullOrBlank()) {
-                append("assistant", "Could not read this file. Try a plain text file (.txt) for now — other formats are coming soon.")
+                val msg = if (isPdf) {
+                    "Is PDF mein text nahi mila — shayad yeh scanned/photo PDF hai (abhi sirf text-wali PDF chalti hain)."
+                } else {
+                    "Could not read this file. Try a plain text (.txt) or text-based PDF file."
+                }
+                append("assistant", msg)
                 return@launch
             }
 
-            val fileName = getFileName(uri)
-            val savedContent = content.take(20000)
+            val savedContent = content.take(2_000_000)
 
             withContext(Dispatchers.IO) {
                 knowledgeStore.save(title = fileName, content = savedContent)
@@ -657,7 +669,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val rawReply = withContext(Dispatchers.IO) { callAi(prompt) }
             hideTyping()
             val reply = friendlyReply(rawReply)
-            append("assistant", "Saved \"$fileName\" to Guru's memory. Here's a summary:\n\n$reply")
+            append("assistant", "Saved \"$fileName\" to Guru's memory (${content.length} characters). Here's a summary:\n\n$reply")
             speak(reply)
         }
     }
