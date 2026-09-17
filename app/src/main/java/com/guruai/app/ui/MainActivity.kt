@@ -238,8 +238,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val offlineResult = withContext(Dispatchers.Default) {
                 OfflineLlmClient.generate(applicationContext, offlinePath, prompt)
             }
-            if (!offlineResult.startsWith("(Offline model error")) {
-                return "$offlineResult\n\n[offline mode — no internet]"
+            return if (!offlineResult.startsWith("(Offline model error")) {
+                "$offlineResult\n\n[offline mode — no internet]"
+            } else {
+                offlineResult
             }
         }
 
