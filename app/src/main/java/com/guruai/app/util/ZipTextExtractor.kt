@@ -17,14 +17,21 @@ object ZipTextExtractor {
                     var entry = zis.nextEntry
                     while (entry != null && sb.length < maxTotalChars) {
                         val name = entry.name
-                        if (!entry.isDirectory && (name.endsWith(".txt", true) || name.endsWith(".pdf", true))) {
+                        val codeExtensions = listOf(
+                            ".txt", ".md", ".kt", ".java", ".xml", ".py", ".js", ".ts",
+                            ".json", ".gradle", ".kts", ".yml", ".yaml", ".html", ".css",
+                            ".c", ".cpp", ".h", ".sh", ".properties", ".gitignore"
+                        )
+                        val isPdfEntry = name.endsWith(".pdf", true)
+                        val isCodeEntry = codeExtensions.any { name.endsWith(it, true) }
+                        if (!entry.isDirectory && (isPdfEntry || isCodeEntry)) {
                             val bytes = ByteArrayOutputStream()
                             val buffer = ByteArray(8192)
                             var len: Int
                             while (zis.read(buffer).also { len = it } != -1) {
                                 bytes.write(buffer, 0, len)
                             }
-                            val entryText = if (name.endsWith(".pdf", true)) {
+                            val entryText = if (isPdfEntry) {
                                 try {
                                     PDDocument.load(ByteArrayInputStream(bytes.toByteArray())).use { doc ->
                                         PDFTextStripper().getText(doc)
