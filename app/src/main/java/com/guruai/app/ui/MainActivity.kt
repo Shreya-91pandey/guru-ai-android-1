@@ -636,13 +636,15 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             val fileName = getFileName(uri)
             val isPdf = fileName.endsWith(".pdf", ignoreCase = true) ||
                 contentResolver.getType(uri) == "application/pdf"
+            val isZip = fileName.endsWith(".zip", ignoreCase = true) ||
+                contentResolver.getType(uri) == "application/zip"
 
             val content = withContext(Dispatchers.IO) {
                 try {
-                    if (isPdf) {
-                        com.guruai.app.util.PdfTextExtractor.extractText(this@MainActivity, uri)
-                    } else {
-                        contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
+                    when {
+                        isZip -> com.guruai.app.util.ZipTextExtractor.extractText(this@MainActivity, uri)
+                        isPdf -> com.guruai.app.util.PdfTextExtractor.extractText(this@MainActivity, uri)
+                        else -> contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
                     }
                 } catch (e: Exception) {
                     null
@@ -650,10 +652,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
 
             if (content.isNullOrBlank()) {
-                val msg = if (isPdf) {
-                    "Is PDF mein text nahi mila — shayad yeh scanned/photo PDF hai (abhi sirf text-wali PDF chalti hain)."
-                } else {
-                    "Could not read this file. Try a plain text (.txt) or text-based PDF file."
+                val msg = when {
+                    isZip -> "Is zip mein koi padhne layak .txt ya text-wali .pdf file nahi mili."
+                    isPdf -> "Is PDF mein text nahi mila — shayad yeh scanned/photo PDF hai (abhi sirf text-wali PDF chalti hain)."
+                    else -> "Could not read this file. Try a plain text (.txt), text-based PDF, or a zip containing those."
                 }
                 append("assistant", msg)
                 return@launch
