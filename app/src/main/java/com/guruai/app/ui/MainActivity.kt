@@ -233,6 +233,13 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             lastError = result
         }
 
+        val termuxResult = withContext(Dispatchers.IO) {
+            com.guruai.app.data.TermuxClient.chat(prompt)
+        }
+        if (!termuxResult.startsWith("(Termux server error") && !termuxResult.startsWith("(Empty reply")) {
+            return "$termuxResult\n\n[local server mode]"
+        }
+
         val offlinePath = prefs.offlineModelPath
         if (offlinePath.isNotBlank() && File(offlinePath).exists()) {
             val offlineResult = withContext(Dispatchers.Default) {
