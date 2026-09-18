@@ -15,7 +15,8 @@ object TermuxClient {
 
     fun chat(prompt: String): String {
         return try {
-            val json = JSONObject().put("message", prompt).toString()
+            val cleanPrompt = extractLatestMessage(prompt)
+            val json = JSONObject().put("message", cleanPrompt).toString()
             val body = json.toRequestBody("application/json".toMediaType())
 
             val request = Request.Builder()
@@ -33,6 +34,15 @@ object TermuxClient {
             }
         } catch (e: Exception) {
             "(Termux server error: ${e.message})"
+        }
+    }
+
+    private fun extractLatestMessage(prompt: String): String {
+        val idx = prompt.lastIndexOf("User:")
+        return if (idx >= 0) {
+            prompt.substring(idx + "User:".length).trim()
+        } else {
+            prompt.trim()
         }
     }
 }
