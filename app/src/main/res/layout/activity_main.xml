@@ -16,12 +16,8 @@
 
         <Button
             android:id="@+id/btnMenu"
-            style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="40dp"
             android:layout_height="40dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:background="@drawable/bg_round_flat"
             android:text="☰"
             android:textColor="#F5F5F5"
             android:textSize="16sp"
@@ -39,14 +35,8 @@
 
         <Button
             android:id="@+id/btnReadScreen"
-            style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:background="@drawable/bg_round_flat"
+            android:layout_height="wrap_content"
             android:text="Read screen"
             android:textColor="#F5F5F5"
             android:textAllCaps="false"
@@ -55,14 +45,8 @@
 
         <Button
             android:id="@+id/btnSettings"
-            style="@style/Widget.AppCompat.Button.Borderless"
             android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:background="@drawable/bg_round_flat"
+            android:layout_height="wrap_content"
             android:text="Settings"
             android:textColor="#F5F5F5"
             android:textAllCaps="false"
@@ -103,12 +87,8 @@
 
         <Button
             android:id="@+id/btnPlus"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:background="@drawable/bg_round_flat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="+"
             android:textColor="#F5F5F5"
             android:textSize="18sp"
@@ -128,27 +108,19 @@
 
         <Button
             android:id="@+id/btnMic"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:background="@drawable/bg_round_flat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="🎤"
-            android:textSize="15sp"
+            android:textSize="16sp"
             android:layout_marginStart="6dp" />
 
         <Button
             android:id="@+id/btnSend"
-            style="@style/Widget.AppCompat.Button.Borderless"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
-            android:elevation="0dp"
-            android:stateListAnimator="@null"
-            android:background="@drawable/bg_round_flat"
-            android:text="➤"
-            android:textColor="#F5C518"
-            android:textSize="18sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Send"
+            android:textColor="#F5F5F5"
+            android:textAllCaps="false"
             android:layout_marginStart="6dp" />
     </LinearLayout>
 </LinearLayout>
