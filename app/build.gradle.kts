@@ -62,4 +62,6 @@ dependencies {
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+    implementation("com.tom-roush:pdfbox-android:2.0.27.0")
     implementation("androidx.health.connect:connect-client:1.1.0-alpha11")
+}
