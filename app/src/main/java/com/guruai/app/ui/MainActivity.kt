@@ -1,4 +1,4 @@
-package com.guruai.app.ui
+7package com.guruai.app.ui
 
 import android.Manifest
 import android.app.AlertDialog
@@ -969,6 +969,14 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun speak(text: String) {
         speechRecognizer?.stopListening()
+
+        val isHindi = text.any { it.code in 0x0900..0x097F }
+        val locale = if (isHindi) java.util.Locale("hi", "IN") else java.util.Locale.US
+        val result = tts?.setLanguage(locale)
+        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+            tts?.setLanguage(java.util.Locale.US)
+        }
+
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "guru_reply")
     }
 
