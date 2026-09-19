@@ -170,6 +170,7 @@ class SettingsActivity : AppCompatActivity() {
                 } else {
                     "No offline model loaded"
                 }
+                tvHealthStatus.text = if (com.guruai.app.data.HealthConnectClientWrapper.isAvailable(this)) "Available — tap Connect" else "Health Connect app not installed"
 
                 tvPassError.visibility = View.GONE
             } else {
