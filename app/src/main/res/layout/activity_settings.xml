@@ -434,16 +434,6 @@
                 android:text="Select model file (.task)"
                 android:layout_marginTop="8dp" />
 
-            <!-- Health Connect -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Health Connect (smartwatch data)"
-                android:textColor="#F5C518"
-                android:textStyle="bold"
-                android:paddingTop="16dp"
-                android:paddingBottom="6dp" />
-
             <TextView
                 android:id="@+id/tvHealthStatus"
                 android:layout_width="match_parent"
