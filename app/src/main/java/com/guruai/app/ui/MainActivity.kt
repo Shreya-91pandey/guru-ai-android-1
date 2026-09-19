@@ -1,4 +1,4 @@
-7package com.guruai.app.ui
+package com.guruai.app.ui
 
 import android.Manifest
 import android.app.AlertDialog
