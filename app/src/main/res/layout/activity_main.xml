@@ -18,8 +18,15 @@
             android:id="@+id/btnMenu"
             android:layout_width="40dp"
             android:layout_height="40dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:padding="0dp"
+            android:background="@drawable/bg_round_flat"
             android:text="☰"
-            android:textSize="18sp"
+            android:textColor="#F5F5F5"
+            android:textSize="16sp"
             android:layout_marginEnd="8dp" />
 
         <TextView
@@ -32,11 +39,19 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <Button
+         <Button
             android:id="@+id/btnReadScreen"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="@drawable/bg_round_flat"
             android:text="Read screen"
+            android:textColor="#F5F5F5"
             android:textAllCaps="false"
             android:textSize="12sp"
             android:layout_marginEnd="6dp" />
@@ -44,9 +59,19 @@
         <Button
             android:id="@+id/btnSettings"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_height="36dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:background="@drawable/bg_round_flat"
             android:text="Settings"
-            android:textAllCaps="false" />
+            android:textColor="#F5F5F5"
+            android:textAllCaps="false"
+            android:textSize="12sp" />
+        
     </LinearLayout>
 
     <TextView
@@ -90,7 +115,9 @@
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
+            android:background="@drawable/bg_round_flat"
             android:text="+"
+            android:textColor="#F5F5F5"
             android:textSize="18sp"
             android:textAllCaps="false"
             android:layout_marginEnd="6dp" />
@@ -115,6 +142,7 @@
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
+            android:background="@drawable/bg_round_flat"
             android:text="🎤"
             android:textSize="15sp"
             android:layout_marginStart="6dp" />
@@ -128,7 +156,10 @@
             android:insetTop="0dp"
             android:insetBottom="0dp"
             android:padding="0dp"
+            android:background="@drawable/bg_round_flat"
             android:text="➤"
-            android:textSize="16sp"
+            android:textColor="#F5C518"
+            android:textSize="18sp"
             android:layout_marginStart="6dp" />
-    </LinearLayout>
+
+        
