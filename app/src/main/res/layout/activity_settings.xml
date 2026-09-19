@@ -493,3 +493,27 @@
         </LinearLayout>
     </LinearLayout>
 </ScrollView>
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Health Connect (smartwatch data)"
+                android:textColor="#F5C518"
+                android:textStyle="bold"
+                android:paddingTop="16dp"
+                android:paddingBottom="6dp" />
+
+            <TextView
+                android:id="@+id/tvHealthStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Not connected"
+                android:textColor="#A0A0A0"
+                android:background="#1A1A1A"
+                android:padding="12dp" />
+
+            <Button
+                android:id="@+id/btnConnectHealth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Connect Health Connect"
+                android:layout_marginTop="8dp" />
